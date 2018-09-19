@@ -5,9 +5,7 @@
 #include<stdio.h>
 #include<string.h>
 
-
-//Justin King
-//CIS 457
+//CIS 457 Reliability Project
 //Server.c
 int main(int argc, char** argv)
 {

@@ -6,8 +6,7 @@
 #include<unistd.h>
 #include<arpa/inet.h>
 
-//Justin King
-//CIS 457
+//CIS 457 Reliability Project
 //Client.c
 int main(int argc, char** argv)
 {
