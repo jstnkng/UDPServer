@@ -31,9 +31,9 @@ int main(int argc, char** argv)
 	serveraddr.sin_port = htons(portNumber);
 	serveraddr.sin_addr.s_addr = inet_addr(serverIP);
 
-	printf("Enter a message: ");
 	char line[5000];
-	fgets(line, 5000, stdin);
+	printf("Enter a filename: ");
+ 	scanf("%s", line);
 	sendto(sockfd, line, strlen(line) + 1, 0, (struct sockaddr*) &serveraddr, sizeof(serveraddr));
 
 	int len = sizeof(&serveraddr);
