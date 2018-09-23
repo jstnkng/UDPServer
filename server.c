@@ -31,12 +31,8 @@ int main(int argc, char **argv)
 
 		printf("Filename from client: %s\n", line);
 
-		// TODO:
-		// Add packet receiving functionality
-
 		FILE *f = fopen(line, "r");
 
-		// Messages client if file cannot be found
 		if (f == NULL)
 		{
 			char *message = "Could not find/open file";
@@ -45,16 +41,32 @@ int main(int argc, char **argv)
 				   (struct sockaddr *)&clientaddr, len);
 		}
 		else
-		{
-			// Parses file contents
-			fseek(f, 0, SEEK_END);
-			long fileSize = ftell(f);
-			fseek(f, 0, SEEK_SET);
-			char *string = malloc(fileSize + 1);
-			fread(string, fileSize, 1, f);
-			fclose(f);
-			sendto(sockfd, string, strlen(string)+1, 0,
-				   (struct sockaddr *)&clientaddr, len);
+		{ 
+			while (1)
+			{
+				// TODO: Need to add header to this buffer and that will act as
+				// our packet.
+				// Buffer contains contents of file
+				unsigned char buff[1024];
+				int nread = fread(buff, 1, 1024, f);
+				printf("Bytes read %d\n", nread);
+				if (nread > 0)
+				{
+					printf("Sending \n");
+					sendto(sockfd, buff, nread, 0, (struct sockaddr *)&clientaddr, len);
+				}
+				if (nread < 1024)
+				{
+					if (feof(f))
+						printf("End of file\n");
+						// TODO: Remove line below when header functionality is added.
+						// Sends 1 byte of data to indicate all the packets have been sent.
+						sendto(sockfd, buff, 1, 0, (struct sockaddr *)&clientaddr, len);
+					if (ferror(f))
+						printf("Error reading\n");
+					break;
+				}
+			}
 		}
 	}
 	return 0;

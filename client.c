@@ -31,15 +31,45 @@ int main(int argc, char** argv)
 	serveraddr.sin_port = htons(portNumber);
 	serveraddr.sin_addr.s_addr = inet_addr(serverIP);
 
-	char line[5000];
+	char filename[100];
 	printf("Enter a filename: ");
- 	scanf("%s", line);
-	sendto(sockfd, line, strlen(line) + 1, 0, (struct sockaddr*) &serveraddr, sizeof(serveraddr));
+ 	scanf("%s", filename);
+	sendto(sockfd, filename, strlen(filename) + 1, 0, (struct sockaddr*) &serveraddr, sizeof(serveraddr));
+
+	char newFilename[100];
+	strcpy(newFilename, "Received_");
+	strcat(newFilename, filename);
+
+	// Reference: https://codereview.stackexchange.com/questions/43914/client-server-implementation-in-c-sending-data-files
+
+	FILE *fp;
+    fp = fopen(newFilename, "w");
+    if(NULL == fp)
+    {
+        printf("Error creating file");
+        return 1;
+    }
 
 	int len = sizeof(&serveraddr);
-	recvfrom(sockfd, line, 5000, 0, (struct sockaddr*) &serveraddr, &len);
+	int bytesReceived = 0;
+	char recvBuff[1024];
 
-	printf("Received from server: %s\n", line);
+	 /* 
+	  * TODO: Add a header to data with information like size & seq to determine when to stop
+	  * receiving packets. 
+	  * Receives 1024 or less bytes of data at a time.
+	  * Currently stops receiving data when server sends 1 byte of data to indicte the end of file.
+	  */
+    while((bytesReceived = recvfrom(sockfd, recvBuff, 1024, 0, (struct sockaddr*) &serveraddr, &len)) > 1)
+    {
+        printf("Bytes received %d\n",bytesReceived);    
+        fwrite(recvBuff, 1,bytesReceived,fp);
+    }
+
+    if(bytesReceived < 0)
+    {
+        printf("\n Error receiving data \n");
+    }
 
 	close(sockfd);
 
