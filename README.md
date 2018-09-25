@@ -48,19 +48,19 @@ Copy packetcorrupt.py to /home/mininet/pox/ext in the mininet virtual machine. I
 Documentation of your program is worth 10 points. This should be a 2-3 page document describing the design of your program. This should not be a line by line explanation of your code, but should explain the overall structure and logic of the program, as well as what major challenges you encountered and how you solved them.
 
 # Grading
-There will be a total of 100 points, divided as follows:
-Criteria                                                                                            Points
-Part 1
-Transfer request	                                                                                5
-File transfer (on error free line) working for text files	                                        10
-File transfer (on error free line) working for other file types (pdf, jpg, etc)	                    10
-Sliding window protocol properly implemented	                                                    15
-Error checking for all inputs	                                                                    5
-Part 2
-File transfer works with data/ack loss	10
-File transfer works with ack/ack duplication	10
-File transfer works with data/ack packet corruption	10
-File transfer works with reordering	10
-File transfer works with all above simultaneously	5
-Misc
-Documentation	10
+There will be a total of 100 points, divided as follows:<br />
+**Criteria**                                                                                            **Points**
+- *Part 1*
+	- Transfer request	                                                                                5
+	- File transfer (on error free line) working for text files	                                       10
+	- File transfer (on error free line) working for other file types (pdf, jpg, etc)	                    10
+	- Sliding window protocol properly implemented	                                                    15
+	- Error checking for all inputs	                                                                    5
+- *Part 2*
+	- File transfer works with data/ack loss	10
+	- File transfer works with ack/ack duplication	10
+	- File transfer works with data/ack packet corruption	10
+	- File transfer works with reordering	10
+	- File transfer works with all above simultaneously	5
+- *Misc*
+	- Documentation	10
