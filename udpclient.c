@@ -45,25 +45,32 @@ int main(int argc, char** argv){
 	fgets(filename,5000, stdin);
 	sendto(sockfd,filename,strlen(filename)+1,0,(struct sockaddr*) &serveraddr, sizeof(serveraddr));
 
+	// ack is the acknowledgement to be sent out, this will include
+	// a byte saying which packet it received (position 0 - 9)
 	char* ack = "Received Packet\n";
 	char newFilename[100];
+	filename[strlen(filename) - 1] = 0;
 	strcpy(newFilename, "Received_");
 	strcat(newFilename, filename);
-
-	printf(newFilename);
 	
-	FILE *f = fopen("output", "w");
+	// opens output file
+	FILE *f = fopen(newFilename, "w");
 	if(f == NULL){
 		printf("Could not open file to write\n");
 		return(1);
 	}
+	// Infinite loop to receive packets, currently it just exits after 8 seconds
+	// part 2 we will make the timeout much shorter and it will break and exit at end of file,
+	// indicated probably by a special packet
 	while(1){
 		char packet[5000];
+		// int n gets bytes from packet received
 		int n = recvfrom(sockfd, packet, 5000, 0, (struct sockaddr*) &serveraddr, &len);
 		if(n==-1){
 			printf("TIMEOUT\n");
 			break;
 		} else {
+			// if packet is received, write it, send ack
 			printf("Received %i bytes, sending ack\n", n);
 			fwrite(packet, 1, n, f);
 			sendto(sockfd,ack,strlen(ack)+1,0,(struct sockaddr*) &serveraddr, sizeof(serveraddr));
