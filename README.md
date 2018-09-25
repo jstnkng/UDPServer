@@ -26,36 +26,36 @@ Due: October 1st, 2018
 
 Packet corruption, loss, duplication, and reordering must be accounted for. Be sure to think about corruption, loss, duplication, and reordering of both data and acknowledgement packets. Please see the Grading section below.
 
-Testing
+# Testing
 To test your code, you must check if it handles loss, reordering, duplication, and corruption. However, you are unlikely to run into any of these happening at random on a small test network, and certain to not run into them at random on the simulator. Instead, we must intentionally cause the simulator to simulate these behaviors.
 Simulating loss
 To simulate loss, we will run commands on the virtual switch, using netem. Documentation is available at http://www.linuxfoundation.org/collaborate/workgroups/networking/netem. Specifically, to simulate loss, the command to use is tc qdisc add dev <dev> root netem loss <X.Y%>. Replace <dev> with the network interface you want to simulate loss on. Replace <X.Y%> with a percentage of packet loss to test with. 10% is reasonable for testing. If you are changing your loss percent after already adding it, you will have to replace the word add with change. Netem only affects outgoing packets, so, when testing, be sure to run any commands on both of the switch's network interfaces to simulate problems in both directions of the connection.
 
-Simulating reordering
+# Simulating reordering
 We will also use netem to simulate reordering. The specific command to simulate reordering is tc qdisc add dev <dev> root netem delay <Xms> reorder <Y%>. This will delay Y% of packets by X ms, causing reordering if the packets are originally sent less than Xms apart. Remember as with loss, this command works for only outgoing packets. To simulate reordering in both directions, you must run it on both switch interfaces. You may combine the loss and reordering commands to get both behaviors, with a command like tc qdisc add dev <dev> root netem delay <Xms> reorder <Y%> loss <Z%>
 
-Simulating duplication
+# Simulating duplication
 Duplication can also be simulated using netem. The specific command to simulate duplication is tc qdisc add dev <dev> root netem duplicate <Y%>. This will duplicate Y% of packets by X ms. Remember as with loss, this command works for only outgoing packets. To simulate reordering in both directions, you must run it on both switch interfaces. You may combine this command with the others in the obvious way to get a combination of behaviors.
 
-Simulating corruption
+# Simulating corruption
 To simulate packet corruption, you will need to run a custom controller that modifies the switch behavior to introduce corrpution (netem can create packet corrution, but only in a limited way not suited for this project).
 
 pox is a modular controller included with mininet. To test packet corruption, we wil use the pox module packetcorrupt.py. This modifies standard switch behavior to cause the switch to randomly flip bits in a percentage of packets.
 
 Copy packetcorrupt.py to /home/mininet/pox/ext in the mininet virtual machine. If you want to change the packet drop percentage, you may do so by modifying line 105 of packetcorrupt.py To run the pox openflow controller with this script, change directory to /home/mininet/pox. Then run ./pox.py packetcorrupt (you can do this from the conroller terminal after starting mininet, or from the main mininet VM terminal). To make mininet let pox control its switch behavior, add --controller=remote to the usual command line invocation of mn -x
 
-Documentation
+# Documentation
 Documentation of your program is worth 10 points. This should be a 2-3 page document describing the design of your program. This should not be a line by line explanation of your code, but should explain the overall structure and logic of the program, as well as what major challenges you encountered and how you solved them.
 
-Grading
+# Grading
 There will be a total of 100 points, divided as follows:
-Criteria	Points
+Criteria                                                                                            Points
 Part 1
-Transfer request	5
-File transfer (on error free line) working for text files	10
-File transfer (on error free line) working for other file types (pdf, jpg, etc)	10
-Sliding window protocol properly implemented	15
-Error checking for all inputs	5
+Transfer request	                                                                                5
+File transfer (on error free line) working for text files	                                        10
+File transfer (on error free line) working for other file types (pdf, jpg, etc)	                    10
+Sliding window protocol properly implemented	                                                    15
+Error checking for all inputs	                                                                    5
 Part 2
 File transfer works with data/ack loss	10
 File transfer works with ack/ack duplication	10
