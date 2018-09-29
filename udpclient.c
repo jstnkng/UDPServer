@@ -36,6 +36,12 @@ int main(int argc, char** argv){
 	printf("Enter an IP address: ");
 	char ip[500];
 	fgets(ip,500,stdin);
+	int checkIP = inet_pton(AF_INET, ip, &(serveraddr.sin_addr));
+	if (checkIP != 0)
+	{
+		printf("Invalid ip address.");
+		return 0;
+	}
 	serveraddr.sin_addr.s_addr = inet_addr(ip);
 	
 	socklen_t len = sizeof(serveraddr);
