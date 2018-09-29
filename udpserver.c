@@ -31,6 +31,7 @@ int main(int argc, char** argv){
 	socklen_t len = sizeof(clientaddr);
 	int clientsocket = accept(sockfd, (struct sockaddr*)&clientaddr, &len);
 	char line[500000];
+	// receiving file request
 	while(1){
 		int n = recvfrom(sockfd, line, 5000, 0, (struct sockaddr*) &clientaddr, &len);
 		if(n==-1){
@@ -47,11 +48,18 @@ int main(int argc, char** argv){
 		printf("fopen failed, errno = %d\n", errno);
 		printf("No file found by that name\n");
 	} else {
+		// File found, begins transfer
 		int packetSize = 1000;
 		printf("File found, beginning transfer.\n");
-		// Sending first 4 packets (window size 5)
+		// Sending first 5 packets (window size 5)
 		char packet[packetSize];
-		for(int i = 0; i < 4; i++){
+		// Transfers first 5 packets immediately with this four loop
+		// this effectively is beginning the stream and setting the window to 5
+		// since the client will be sending acks for each of these
+		// Part 2 we will need a data structure to hold on to the "active" 5 packets
+		// something along this lines of char* packets[10] to hold 10 spaces of possible packets
+		// only 5 should be in there at a time, though
+		for(int i = 0; i < 5; i++){
 			int n = fread(packet, 1, packetSize - 1, f);
 			if(n < 0){
 				printf("Error reading from file\n");
@@ -65,7 +73,7 @@ int main(int argc, char** argv){
 				printf("Sent packet, %i bytes\n", n);
 			}
 		}
-		
+		// Infinite loop for sending packets until end of file
 		while(1){
 			int n = fread(packet, 1, packetSize - 1, f);
 			if(n < 0){
@@ -75,8 +83,12 @@ int main(int argc, char** argv){
 			if(n == 0){
 				printf("End of file\n");
 				break;
-			} else {
+			} else { // else here means packet data available and successfully read
 				char line[5000];
+				// here if the ack is read by recvfrom, the next packet is sent
+				// I think the fread above section should really be in the else statement here, otherwise
+				// it keeps reading even if no ack is received for part 2, but other
+				// things will change as well
 				int r = recvfrom(sockfd, line, 5000, 0, (struct sockaddr*) &clientaddr, &len);
 				if(r==-1){
 					printf("waiting for ack\n");
