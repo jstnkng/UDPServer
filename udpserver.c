@@ -7,21 +7,12 @@
 #include <arpa/inet.h>
 #include <errno.h>
 
-#define windowSize 5
-#define packetSize 1000
-
-struct packet{
-	char data[packetSize];
-	int id;
-};
-
-struct packet window[windowSize];
-
+/* SERVER */
 int main(int argc, char** argv){
 	int sockfd=socket(AF_INET, SOCK_DGRAM, 0);
 
 	struct timeval timeout;
-	timeout.tv_sec = 5;
+	timeout.tv_sec = 1;
 	timeout.tv_usec = 0;
 
 	setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
@@ -40,7 +31,7 @@ int main(int argc, char** argv){
 	// Receiving file request
 	socklen_t len = sizeof(clientaddr);
 	int clientsocket = accept(sockfd, (struct sockaddr*)&clientaddr, &len);
-	char line[500000];
+	char line[5000];
 	// receiving file request
 	while(1){
 		int n = recvfrom(sockfd, line, 5000, 0, (struct sockaddr*) &clientaddr, &len);
@@ -59,18 +50,21 @@ int main(int argc, char** argv){
 		printf("No file found by that name\n");
 	} else {
 		// File found, begins transfer
+		int packetSize = 1000;
+		int headerSize = 1;
 		printf("File found, beginning transfer.\n");
-		// Sending first 5 packets (window size)
-
-		// Transfers first 5 packets immediately with this four loop
-		// this effectively is beginning the stream and setting the window to 5
-		// since the client will be sending acks for each of these
-		// Part 2 we will need a data structure to hold on to the "active" 5 packets
-		// something along this lines of char* packets[10] to hold 10 spaces of possible packets
-		// only 5 should be in there at a time, though
-		for(int i = 0; i < windowSize; i++){
-			window[i].id = i;
-			int n = fread(window[i].data, 1, packetSize - 1, f);
+		// Sending first 5 packets (window size 5)
+		char packet[packetSize+headerSize];
+		char *packetsNA[10]; // Packets Not Acknowledged
+		int sizes[10]; // Sizes of packets in packetsNA
+		// Mallocing space for each NA packet
+		for(int i = 0; i < 10; i++){
+		  packetsNA[i] = malloc(packetSize+headerSize);
+		}					  
+		int acksRecv[10];
+		for(int i = 0; i < 5; i++){
+			int n = fread(packet + headerSize, 1, packetSize, f);
+			packet[0] = i; // Tells position
 			if(n < 0){
 				printf("Error reading from file\n");
 				break;
@@ -79,46 +73,80 @@ int main(int argc, char** argv){
 				printf("End of file\n");
 				break;
 			} else {
-				sendto(sockfd, (struct packet*) &window[i] ,n,0,(struct sockaddr*) &clientaddr, sizeof(clientaddr));
-				printf("Sent packet ID: %i \n", window[i].id);
+			  memcpy(packetsNA[i], packet, n+headerSize);
+			  sizes[i] = n+headerSize;
+				sendto(sockfd,packet,n+headerSize,0,(struct sockaddr*) &clientaddr, 				      sizeof(clientaddr));
+				printf("Sent packet, %i bytes\n", n+headerSize);
 			}
 		}
-		int bottomOfWindow = 0;
 		// Infinite loop for sending packets until end of file
+		int packetNo = 5; // current packet no
+		int currentPosition = 0; // current position to recv ack
 		while(1){
-			//Receive an acknowledgement packet
-			struct packet *receivedPacket = malloc(sizeof(struct packet));
-			int r = recvfrom(sockfd, receivedPacket, packetSize, 0, (struct sockaddr*) &clientaddr, &len);
-			if (r==-1){
-				printf("waiting for ack...");
-			}
-			if (r==0){
-				printf("no ack received\n");
-			}
-			else{
-				printf("Received ack: %i\n", receivedPacket->id);
-				//If the packet we receive is for the first packet in our window
-				//Slide the window up and read data into the next packet
-				if (receivedPacket->id == bottomOfWindow){
-					int n = fread(window[bottomOfWindow + windowSize].data, 1, packetSize - 1, f);
-					bottomOfWindow++;
-					if (n < 0){
-						printf("Error reading file\n");
-						break;
+				char ack[1];
+				int r = recvfrom(sockfd, ack, 2, 0, (struct sockaddr*) &clientaddr, &len);
+				if(r==-1){
+					// Resending packet of interest if ack not received
+					// TO DO fix size of need to hold on to packet sizes
+					sendto(sockfd,packetsNA[currentPosition],sizes[currentPosition],0,	(struct sockaddr*) &clientaddr, sizeof(clientaddr));
+					printf("waiting for ack, resending packet %i\n", (int) packetsNA[currentPosition][0]);
+					printf("Should be resending: %i\n", currentPosition);
+					//printf("Packet %s\n", packetsNA[currentPosition]+1); 
+				} else {
+					acksRecv[(int)ack[0]] = 1;
+					printf("Ack:%i", (int)ack[0]);
+					printf(" CurrPos:%i\n", currentPosition);
+					if((int)ack[0] == currentPosition){
+					        acksRecv[currentPosition] = 0;
+						int n = fread(packet+headerSize, 1, packetSize, f);	
+						packet[0] = packetNo; // Tells position
+						if(n < 0){
+							printf("Error reading from file\n");
+							return(-1);
+						}
+						if(n == 0){
+							printf("End of file\n");
+							packet[0] = 'e';
+							packet[1] = packetNo;
+							sendto(sockfd,packet,2,0,(struct sockaddr*) &clientaddr, sizeof(clientaddr));
+							memcpy(packetsNA[packetNo], packet, n+headerSize);
+							packetNo++;
+							currentPosition++;
+						} else {
+							printf("ack: %i\n", (int)ack[0]);
+							printf("Sent packet, %i bytes\n", n+headerSize);
+							printf("packetNo: %i, actual #: %i\n", packetNo, (int)packet[0]);
+						        memcpy(packetsNA[packetNo], packet, n+headerSize);
+							sizes[packetNo] = n+headerSize;
+							//printf("packetsNA: %s\n", packetsNA[packetNo] + 1);
+							printf("packetNo: %i, actual #: %i\n", packetNo, (int)packet[0]);
+							sendto(sockfd,packet,n+headerSize,0,(struct sockaddr*) &clientaddr, 									sizeof(clientaddr));
+							acksRecv[currentPosition] = 0;
+							//packetsNA[currentPosition] = 0;
+							packetNo++;
+							currentPosition++;
+							if(currentPosition == 10){ currentPosition = 0; }
+							if(packetNo == 10){ packetNo = 0; }
+							int i = 0;
+							while(i < 4){
+							  if(acksRecv[currentPosition]==1){
+							    acksRecv[currentPosition] = 0;
+							    //packetsNA[currentPosition] = 0;
+							    currentPosition++;
+							    if(currentPosition == 10){ currentPosition = 0; }
+						
+							  } else { break; }
+							  i++;
+							}
+						}
+						// says client has received all of file
+					} else if ((char)ack[0] == 'c'){
+					      break; 
 					}
-					if (n ==0){
-						printf("End of file\n");
-						break;
-					}
-				}
-				else{
-					printf("Resending a packet");
-				}
-				//Send the packet in the bottom of the window
-				sendto(sockfd, (struct packet*) &window[bottomOfWindow], sizeof(window[bottomOfWindow]),0,(struct sockaddr*) &clientaddr,sizeof(clientaddr));
 			}
 		}
+		fclose(f);
+		close(sockfd);
 	}
-
-		
 }
+
