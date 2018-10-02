@@ -110,7 +110,7 @@ int main(int argc, char** argv){
 							packet[0] = 'e';
 							packet[1] = packetNo;
 							sendto(sockfd,packet,2,0,(struct sockaddr*) &clientaddr, sizeof(clientaddr));
-							memcpy(packetsNA[packetNo], packet, 2);
+							memcpy(packetsNA[packetNo], packet, n+headerSize);
 							packetNo++;
 							currentPosition++;
 						} else {
