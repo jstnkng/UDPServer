@@ -1,3 +1,4 @@
+
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <stdio.h>
@@ -109,7 +110,7 @@ int main(int argc, char** argv){
 							packet[0] = 'e';
 							packet[1] = packetNo;
 							sendto(sockfd,packet,2,0,(struct sockaddr*) &clientaddr, sizeof(clientaddr));
-							memcpy(packetsNA[packetNo], packet, n+headerSize);
+							memcpy(packetsNA[packetNo], packet, 2);
 							packetNo++;
 							currentPosition++;
 						} else {
@@ -149,4 +150,5 @@ int main(int argc, char** argv){
 		close(sockfd);
 	}
 }
+
 

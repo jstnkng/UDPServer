@@ -93,17 +93,23 @@ int main(int argc, char** argv){
 				if(currentPosition == 10){ currentPosition = 0; }
 				// If packet[0] == e this means EOF
 		        } else if((char)packet[0] == 'e'){
+			  printf("EOF HIT\n");
 			  reachedEOF = 1;
-			  EOFPosition = packet[1];
+			  EOFPosition = (int)packet[1];
+			  printf("%i\n", EOFPosition);
 			} else {
-			   memcpy(packets[(int)packet[0]], packet, n);
-			   sizes[(int)packet[0]] = n;
+			  for(int i = 1; i < 6; i++){
+			    if((int)packet[0] == (i + currentPosition) % 10){
+			      memcpy(packets[(int)packet[0]], packet, n);
+			      sizes[(int)packet[0]] = n;
+			    }
+			  }
 			}	        
 						
 		}
 		int i = 0;
 		while(i < 4){		                    
-		  if((char)packets[currentPosition][0] != 'z'){
+		  if((char)packets[currentPosition][0] != 'z' && (char)packets[currentPosition][0] != 'e'){
 		    printf("%c\n", (char)packets[currentPosition][0]);
 			         printf("Before Saved: %i\n", (int)packets[currentPosition][0]);
 				 fwrite(packets[currentPosition]+1, 1, sizes[currentPosition]-1, f);
@@ -133,4 +139,5 @@ int main(int argc, char** argv){
 	return(0);
 
 }
+
 
