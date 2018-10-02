@@ -113,6 +113,8 @@ int main(int argc, char** argv){
 							memcpy(packetsNA[packetNo], packet, n+headerSize);
 							packetNo++;
 							currentPosition++;
+							if(currentPosition == 10){ currentPosition = 0; }
+							if(packetNo == 10){ packetNo = 0; }
 						} else {
 							printf("ack: %i\n", (int)ack[0]);
 							printf("Sent packet, %i bytes\n", n+headerSize);
